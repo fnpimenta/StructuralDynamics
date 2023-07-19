@@ -147,20 +147,21 @@ try:
 		if filt_app == 1:
 			filt_type = tab2.selectbox('Filter type', ['Low-pass','High-pass','Band-pass'],index=0)
 			filt_order = tab2.slider('Filter order',4,12,8)
+			col1_t2, col2_t2 = tab2.columns(2)
 			
 			if filt_type == 'Low-pass':
-				fmin = tab2.slider('Lower limit of the filter', min_value=0.0, max_value=f_max, value=0.0,disabled=True)  # min, max, default
-				fmax = tab2.slider('Upper limit of the filter', min_value=0.0, max_value=f_max, value=float(f_max/4))  # min, max, default
+				fmin = col1_t2.number_input('Lower limit of the filter', min_value=0.0, max_value=f_max, value=0.0,disabled=True)  # min, max, default
+				fmax = col2_t2.number_input('Upper limit of the filter', min_value=0.0, max_value=f_max, value=float(f_max/4))  # min, max, default
 				sos = signal.butter(filt_order  , fmax, 'lowpass' , fs=fs , output='sos', analog=False)
 
 			elif filt_type == 'High-pass':
-				fmin = tab2.slider('Lower limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
-				fmax = tab2.slider('Upper limit of the filter', 0.0, f_max, value=float(f_max/2),disabled=True)  # min, max, default
+				fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
+				fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/2),disabled=True)  # min, max, default
 				sos = signal.butter(filt_order  , fmin, 'highpass' , fs=fs , output='sos', analog=False)
 
 			elif filt_type == 'Band-pass':
-				fmin = tab2.slider('Lower limit of the filter', 0.0, f_max, value=float(f_max/8))  # min, max, default
-				fmax = tab2.slider('Upper limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
+				fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/8))  # min, max, default
+				fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
 				sos = signal.butter(filt_order  , [fmin,fmax], 'bandpass' , fs=fs , output='sos', analog=False)
 
 			y_doubled = np.zeros(2*len(y)-1)
