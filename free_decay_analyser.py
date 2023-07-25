@@ -79,7 +79,7 @@ elif page == 'OpenFAST repo':
 			"3": "0300",
 			"8": "0800",
 			"11.4": "1140",
-			"22": "2000",
+			"22": "2200",
 			"30": "3000"
 			}   
 	wind = tab1.selectbox('Wind speed (m/s)', winds.keys(),index=2)
