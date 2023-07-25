@@ -133,7 +133,7 @@ try:
 		f_max = tab2.slider('Maximum frequency (Hz)', 0.0, fs/2, float(fs/4))  # min, max, default
 
 		npoints = len(t[t<=t_max])
-		nfft = tab2.slider('n for PSD computation ($2^n$)', int(np.log2(npoints)/4), int(np.log2(npoints)), int(np.log2(npoints)-2))  # min, max, default
+		nfft = tab2.slider('n for PSD computation ($2^n$)', int(np.log2(npoints)/4), int(np.log2(npoints)), int(np.log2(npoints)))  # min, max, default
 
 		peaks_types = {
 					 "Positive peaks only": 0,
