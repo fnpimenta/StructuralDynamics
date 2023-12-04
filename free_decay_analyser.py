@@ -105,18 +105,28 @@ elif page == 'OpenFAST repo':
 		error_check = 1
 else:
 	uploaded_file = tab1.file_uploader("Choose a file")
+	ftype = tab1.radio('File type',['OpenFAST','Android','iOS'],horizontal=True)
 	try:
 		header_row = tab1.number_input('Header row', value=1) - 1
 		first_row = tab1.number_input('First data row', value=1) - 1
 		fs = tab1.number_input('Sampling rate', value=10.0)
 		skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
 
-		if header_row<0:
-			data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace',header=None)
+		if ftype=='Android':
+			if header_row<0:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter=';',encoding_errors='replace',header=None)
+			else:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter=';',encoding_errors='replace')	
+		
+			data = data.replace(',','.', regex=True)
+			data = data.astype(float)
 		else:
-			data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace')	
+			if header_row<0:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace',header=None)
+			else:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace')	
 
-		dof = tab1.selectbox('Data column', data.columns,index=4)
+		dof = tab1.selectbox('Data column', data.columns,index=min(np.shape(data)[1],2))
 		y = np.array(data[dof])
 
 		t = np.linspace(0,1,len(y)) * len(y)/fs
@@ -129,7 +139,10 @@ else:
 # -- Analysis parameters
 try:
 	if error_check == 0:
-		t_min,t_max = tab2.slider('Period for analysis (s)', min_value=0.0, max_value=t[-1], value=[0.0,float(t[-1])])  # min, max, default
+		#t_min,t_max = tab2.slider('Period for analysis (s)', min_value=0.0, max_value=t[-1], value=[0.0,float(t[-1])])  # min, max, default
+		t_min = tab2.number_input('First point for the analysis',min_value=0.0,max_value=None,value=0.0)
+		t_max = tab2.number_input('Last point for the analysis',min_value=0.0,max_value=None,value=t[-1])
+
 		f_max = tab2.slider('Maximum frequency (Hz)', 0.0, fs/2, float(fs/4))  # min, max, default
 
 		npoints = len(t[t<=t_max])
