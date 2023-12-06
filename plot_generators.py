@@ -12,7 +12,7 @@ def free_decay_plot(t,y,y_filt,offset,
 					f, Pxx, Pxx_filt,
 					fs,sos,f_max,applied_filter,
 					time_filter,	
-					fit_type):
+					fit_type,window_size=2):
 	'''
 	Produces the free decay analysis plots:
 	- Time series and filtered time series plots (upper left)
@@ -108,9 +108,9 @@ def free_decay_plot(t,y,y_filt,offset,
 	
 	# Plot estimated dynamic properties
 
-	ax3.plot(peaks_time[1:-1],xi_est,'or',ms=4)
-	ax5.plot(peaks_amp[1:-1],xi_est,'or',ms=4)
-	ax5_f.plot(peaks_amp[1:-1],f_est,'og',ms=4)
+	ax3.plot(peaks_time[int(window_size/2):-int(window_size/2)],xi_est,'or',ms=4)
+	ax5.plot(peaks_amp[int(window_size/2):-int(window_size/2)],xi_est,'or',ms=4)
+	ax5_f.plot(peaks_amp[int(window_size/2):-int(window_size/2)],f_est,'og',ms=4)
 
 	xmin,xmax = 0,ax5.get_xlim()[1]
 	xbounds = np.array([xmin,xmax])

@@ -8,6 +8,7 @@ from copy import deepcopy
 from scipy.integrate import odeint
 from scipy.signal import find_peaks
 from scipy import signal
+from datetime import datetime
 
 from eq_motion import *
 from estimators import *
@@ -107,28 +108,53 @@ else:
 	uploaded_file = tab1.file_uploader("Choose a file")
 	ftype = tab1.radio('File type',['OpenFAST','Android','iOS'],horizontal=True)
 	try:
-		header_row = tab1.number_input('Header row', value=1) - 1
-		first_row = tab1.number_input('First data row', value=1) - 1
-		fs = tab1.number_input('Sampling rate', value=10.0)
-		skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
-
 		if ftype=='Android':
+			header_row = tab1.number_input('Header row', value=2) - 1
+			first_row = tab1.number_input('First data row', value=3) - 1
+		
+			skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
 			if header_row<0:
 				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter=';',encoding_errors='replace',header=None)
 			else:
 				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter=';',encoding_errors='replace')	
-		
+			
 			data = data.replace(',','.', regex=True)
 			data = data.astype(float)
-		else:
+			data.columns = ['Steps','Time','X','Y','Z']
+			fi = 1000/(np.mean(np.array(data['Time'])[2:-1] - np.array(data['Time'])[1:-2]))
+			dof = tab1.selectbox('Data column', data.columns,index=min(np.shape(data)[1],2))
+
+		elif ftype=='iOS':
+			header_row = tab1.number_input('Header row', value=1) - 1
+			first_row = tab1.number_input('First data row', value=2) - 1
+		
+			skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
 			if header_row<0:
 				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace',header=None)
 			else:
 				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace')	
+			data.columns = ['Date','X','Y','Z']
+			dof = tab1.selectbox('Data column', data.columns,index=min(np.shape(data)[1],1))
+			
+			if int(data['Date'].iloc[0][-2:])==99:
+				dt = int(data['Date'].iloc[2][-2:]) - int(data['Date'].iloc[1][-2:])
+			else:
+				dt = int(data['Date'].iloc[1][-2:]) - int(data['Date'].iloc[0][-2:])
+			fi=100/dt
 
-		dof = tab1.selectbox('Data column', data.columns,index=min(np.shape(data)[1],2))
+		else:
+			header_row = tab1.number_input('Header row', value=1) - 1
+			first_row = tab1.number_input('First data row', value=2) - 1
+		
+			skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
+			if header_row<0:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace',header=None)
+			else:
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace')	
+			fi=10
+
 		y = np.array(data[dof])
-
+		fs = tab1.number_input('Sampling rate', value=fi)
 		t = np.linspace(0,1,len(y)) * len(y)/fs
 
 		error_check = 0
@@ -142,7 +168,7 @@ try:
 		#t_min,t_max = tab2.slider('Period for analysis (s)', min_value=0.0, max_value=t[-1], value=[0.0,float(t[-1])])  # min, max, default
 		t_min = tab2.number_input('First point for the analysis',min_value=0.0,max_value=None,value=0.0)
 		t_max = tab2.number_input('Last point for the analysis',min_value=0.0,max_value=None,value=t[-1])
-
+		window_size = 2*tab2.number_input('Window size for damping estimate',min_value=1,max_value=None,value=1)
 		f_max = tab2.slider('Maximum frequency (Hz)', 0.0, fs/2, float(fs/4))  # min, max, default
 
 		npoints = len(t[t<=t_max])
@@ -197,16 +223,16 @@ try:
 
 		# Estimate the peaks of the zeroed time series
 		peaks_time, peaks_amp = peaks_estimator(t[time_filter],y_zerod[time_filter],peaks_types[peaks_type],t_min==0)
-
+		
 		# Estiamte of the dynamic properties of the free decay
-		xi_est, f_est = dynamic_estimator(peaks_time,peaks_amp,peaks_type=peaks_types[peaks_type])
+		xi_est, f_est = dynamic_estimator(peaks_time,peaks_amp,peaks_type=peaks_types[peaks_type],window_size=window_size)
 
 		# Compute the power spectrum of the time series for analysis (for representation purposes only)
 		f, Pxx = signal.welch(y[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
 		f, Pxx_filt = signal.welch(y_filt[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
-
-		fit_sug = fit_guess(abs(peaks_amp[1:-1]),xi_est)
-
+		
+		fit_sug = fit_guess(abs(peaks_amp[int(window_size/2):-int(window_size/2)]),xi_est)
+		
 		fit_types = {
 					 "Trend line": 0,
 					 "Mean value": 1,
@@ -221,7 +247,8 @@ try:
 							  f,Pxx, Pxx_filt,
 							  fs,sos,f_max,filt_app,
 							  time_filter,
-							  fit_types[fit_type])
+							  fit_types[fit_type],
+							  window_size=window_size)
 
 		st.pyplot(fig) 
 	else:

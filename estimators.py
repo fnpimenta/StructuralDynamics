@@ -1,5 +1,5 @@
 import numpy as np
-
+import streamlit as st
 from scipy import signal
 from scipy.signal import find_peaks
 
@@ -115,7 +115,7 @@ def peaks_estimator(t,y,peaks_type=0,add_1P=1,prominence=0):
 
 	return peaks_time, peaks_amp
 
-def dynamic_estimator(peaks_time,peaks_amp,peaks_type=0):
+def dynamic_estimator(peaks_time,peaks_amp,peaks_type=0,window_size=2):
 	'''
 	Estimates the damping ratio and frequency compatible with the free decay.
 	The estimates are made considering a moving window of 1 period.
@@ -140,15 +140,15 @@ def dynamic_estimator(peaks_time,peaks_amp,peaks_type=0):
 
 	'''
 	n_peaks = len(peaks_amp)
-	
+
 	# Dynamic properties estimates
-	xi_est = np.zeros(n_peaks-2)
-	f_est = np.zeros(n_peaks-2)
+	xi_est = np.zeros(n_peaks-window_size)
+	f_est = np.zeros(n_peaks-window_size)
+
+	for i in range(int(window_size/2),n_peaks-int(window_size/2)):
+		xi_est[i-int(window_size/2)],_,_,_ = LinearFitCoefficients(peaks_time[i-int(window_size/2):i+int(window_size/2)+1],np.log(abs(peaks_amp[i-int(window_size/2):i+int(window_size/2)+1])))
+		f_est[i-int(window_size/2)] = int(window_size/2)/(peaks_time[i+int(window_size/2)]-peaks_time[i-int(window_size/2)]) * (1 + 1*(peaks_type==0))
 	
-	for i in range(1,n_peaks-1):
-		xi_est[i-1],_,_,_ = LinearFitCoefficients(peaks_time[i-1:i+2],np.log(abs(peaks_amp[i-1:i+2])))
-		f_est[i-1] = 1/(peaks_time[i+1]-peaks_time[i-1]) * (1 + 1*(peaks_type==0))
-		
 	xi_est = -100*xi_est/(2*np.pi*f_est)
 
 	return xi_est, f_est
