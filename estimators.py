@@ -140,16 +140,22 @@ def dynamic_estimator(peaks_time,peaks_amp,peaks_type=0,window_size=2):
 
 	'''
 	n_peaks = len(peaks_amp)
+	if window_size==n_peaks:
+		xi_est,_,_,_ = LinearFitCoefficients(peaks_time,np.log(abs(peaks_amp)))
+		f_est = 1/2*int(n_peaks-1)/(peaks_time[-1]-peaks_time[0]) * (1 + 1*(peaks_type==0))
+		xi_est = -100*xi_est/(2*np.pi*f_est)
+		
+	else:
 
-	# Dynamic properties estimates
-	xi_est = np.zeros(n_peaks-window_size)
-	f_est = np.zeros(n_peaks-window_size)
+		# Dynamic properties estimates
+		xi_est = np.zeros(n_peaks-window_size)
+		f_est = np.zeros(n_peaks-window_size)
 
-	for i in range(int(window_size/2),n_peaks-int(window_size/2)):
-		xi_est[i-int(window_size/2)],_,_,_ = LinearFitCoefficients(peaks_time[i-int(window_size/2):i+int(window_size/2)+1],np.log(abs(peaks_amp[i-int(window_size/2):i+int(window_size/2)+1])))
-		f_est[i-int(window_size/2)] = int(window_size/2)/(peaks_time[i+int(window_size/2)]-peaks_time[i-int(window_size/2)]) * (1 + 1*(peaks_type==0))
-	
-	xi_est = -100*xi_est/(2*np.pi*f_est)
+		for i in range(int(window_size/2),n_peaks-int(window_size/2)):
+			xi_est[i-int(window_size/2)],_,_,_ = LinearFitCoefficients(peaks_time[i-int(window_size/2):i+int(window_size/2)+1],np.log(abs(peaks_amp[i-int(window_size/2):i+int(window_size/2)+1])))
+			f_est[i-int(window_size/2)] = int(window_size/2)/(peaks_time[i+int(window_size/2)]-peaks_time[i-int(window_size/2)]) * (1 + 1*(peaks_type==0))
+		
+		xi_est = -100*xi_est/(2*np.pi*f_est)
 
 	return xi_est, f_est
 

@@ -163,84 +163,100 @@ else:
 		error_check = 1
 
 # -- Analysis parameters
-try:
-	if error_check == 0:
-		#t_min,t_max = tab2.slider('Period for analysis (s)', min_value=0.0, max_value=t[-1], value=[0.0,float(t[-1])])  # min, max, default
-		t_min = tab2.number_input('First point for the analysis',min_value=0.0,max_value=None,value=0.0)
-		t_max = tab2.number_input('Last point for the analysis',min_value=0.0,max_value=None,value=t[-1])
-		window_size = 2*tab2.number_input('Window size for damping estimate',min_value=1,max_value=None,value=1)
-		f_max = tab2.slider('Maximum frequency (Hz)', 0.0, fs/2, float(fs/4))  # min, max, default
+#try:
+if error_check == 0:
+	#t_min,t_max = tab2.slider('Period for analysis (s)', min_value=0.0, max_value=t[-1], value=[0.0,float(t[-1])])  # min, max, default
+	t_min = tab2.number_input('First point for the analysis',min_value=0.0,max_value=None,value=0.0)
+	t_max = tab2.number_input('Last point for the analysis',min_value=0.0,max_value=None,value=t[-1])
+	
+	f_max = tab2.slider('Maximum frequency (Hz)', 0.0, fs/2, float(fs/4))  # min, max, default
 
-		npoints = len(t[t<=t_max])
-		nfft = tab2.slider('n for PSD computation ($2^n$)', int(np.log2(npoints)/4), int(np.log2(npoints)), int(np.log2(npoints)))  # min, max, default
+	npoints = len(t[t<=t_max])
+	nfft = tab2.slider('n for PSD computation ($2^n$)', int(np.log2(npoints)/4), int(np.log2(npoints)), int(np.log2(npoints)))  # min, max, default
 
-		peaks_types = {
-					 "Positive peaks only": 0,
-					 "All peaks": 1,
-					}
+	peaks_types = {
+				 "Positive peaks only": 0,
+				 "All peaks": 1,
+				}
 
-		peaks_type = tab2.radio('Peaks to use', peaks_types.keys(),horizontal=True)
+	filt_app = tab2.checkbox('Apply filter') 
+	peaks_type = tab2.radio('Peaks to use', peaks_types.keys(),horizontal=True)
 
-		filt_app = tab2.checkbox('Apply filter') 
+	
 
-		if filt_app == 1:
-			filt_type = tab2.selectbox('Filter type', ['Low-pass','High-pass','Band-pass'],index=0)
-			filt_order = tab2.slider('Filter order',4,12,8)
-			col1_t2, col2_t2 = tab2.columns(2)
-			
-			if filt_type == 'Low-pass':
-				fmin = col1_t2.number_input('Lower limit of the filter', min_value=0.0, max_value=f_max, value=0.0,disabled=True)  # min, max, default
-				fmax = col2_t2.number_input('Upper limit of the filter', min_value=0.0, max_value=f_max, value=float(f_max/4))  # min, max, default
-				sos = signal.butter(filt_order  , fmax, 'lowpass' , fs=fs , output='sos', analog=False)
-
-			elif filt_type == 'High-pass':
-				fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
-				fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/2),disabled=True)  # min, max, default
-				sos = signal.butter(filt_order  , fmin, 'highpass' , fs=fs , output='sos', analog=False)
-
-			elif filt_type == 'Band-pass':
-				fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/8))  # min, max, default
-				fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
-				sos = signal.butter(filt_order  , [fmin,fmax], 'bandpass' , fs=fs , output='sos', analog=False)
-
-			y_doubled = np.zeros(2*len(y)-1)
-
-			# Double the time series to avoid filter impact at the beginning
-			y_doubled[len(y)-1:] = y
-			y_doubled[:len(y)-1] = y[:0:-1]
-			y_filt = signal.sosfiltfilt(sos, y_doubled)[len(y)-1:]
-
-		else:
-			y_filt = y
-			sos = 0
-
-		# Define the time series limits for analysis
-		time_filter = (t>=t_min) & (t<=t_max)
-
-		# Estimate the offset and zero the time series
-		offset = offset_estimator(y_filt[time_filter])
-		y_zerod = y_filt - offset
-
-		# Estimate the peaks of the zeroed time series
-		peaks_time, peaks_amp = peaks_estimator(t[time_filter],y_zerod[time_filter],peaks_types[peaks_type],t_min==0)
+	if filt_app == 1:
+		filt_type = tab2.selectbox('Filter type', ['Low-pass','High-pass','Band-pass'],index=0)
+		filt_order = tab2.slider('Filter order',4,12,8)
+		col1_t2, col2_t2 = tab2.columns(2)
 		
-		# Estiamte of the dynamic properties of the free decay
-		xi_est, f_est = dynamic_estimator(peaks_time,peaks_amp,peaks_type=peaks_types[peaks_type],window_size=window_size)
+		if filt_type == 'Low-pass':
+			fmin = col1_t2.number_input('Lower limit of the filter', min_value=0.0, max_value=f_max, value=0.0,disabled=True)  # min, max, default
+			fmax = col2_t2.number_input('Upper limit of the filter', min_value=0.0, max_value=f_max, value=float(f_max/4))  # min, max, default
+			sos = signal.butter(filt_order  , fmax, 'lowpass' , fs=fs , output='sos', analog=False)
 
-		# Compute the power spectrum of the time series for analysis (for representation purposes only)
-		f, Pxx = signal.welch(y[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
-		f, Pxx_filt = signal.welch(y_filt[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
-		
+		elif filt_type == 'High-pass':
+			fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
+			fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/2),disabled=True)  # min, max, default
+			sos = signal.butter(filt_order  , fmin, 'highpass' , fs=fs , output='sos', analog=False)
+
+		elif filt_type == 'Band-pass':
+			fmin = col1_t2.number_input('Lower limit of the filter', 0.0, f_max, value=float(f_max/8))  # min, max, default
+			fmax = col2_t2.number_input('Upper limit of the filter', 0.0, f_max, value=float(f_max/4))  # min, max, default
+			sos = signal.butter(filt_order  , [fmin,fmax], 'bandpass' , fs=fs , output='sos', analog=False)
+
+		y_doubled = np.zeros(2*len(y)-1)
+
+		# Double the time series to avoid filter impact at the beginning
+		y_doubled[len(y)-1:] = y
+		y_doubled[:len(y)-1] = y[:0:-1]
+		y_filt = signal.sosfiltfilt(sos, y_doubled)[len(y)-1:]
+
+	else:
+		y_filt = y
+		sos = 0
+
+	# Define the time series limits for analysis
+	time_filter = (t>=t_min) & (t<=t_max)
+
+	# Compute the power spectrum of the time series for analysis (for representation purposes only)
+	f, Pxx = signal.welch(y[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
+	f, Pxx_filt = signal.welch(y_filt[time_filter], fs, nperseg=2**nfft , scaling='spectrum') 
+	
+	# Estimate the offset and zero the time series
+	offset = offset_estimator(y_filt[time_filter])
+	y_zerod = y_filt - offset
+
+	# Estimate the peaks of the zeroed time series
+	peaks_time, peaks_amp = peaks_estimator(t[time_filter],y_zerod[time_filter],peaks_types[peaks_type],t_min==0)
+	
+	use_all_points = tab2.checkbox('Fit all points simultaneously',value=1)
+	window_size = 2*tab2.number_input('Window size for damping estimate',min_value=1,max_value=None,value=1,disabled=use_all_points)
+	if use_all_points:
+		window_size = len(peaks_time)
+
+	# Estimate of the dynamic properties of the free decay
+	xi_est, f_est = dynamic_estimator(peaks_time,peaks_amp,peaks_type=peaks_types[peaks_type],window_size=window_size)
+	if use_all_points:
+		fit_sug=1
+	else:
 		fit_sug = fit_guess(abs(peaks_amp[int(window_size/2):-int(window_size/2)]),xi_est)
-		
-		fit_types = {
-					 "Trend line": 0,
-					 "Mean value": 1,
-					}
+	
+	fit_types = {
+				 "Trend line": 0,
+				 "Mean value": 1
+				}
 
-		fit_type = tab2.radio('Fit type', fit_types.keys(),horizontal=True,index=fit_sug)
+	fit_type = tab2.radio('Fit type', fit_types.keys(),horizontal=True,index=fit_sug,disabled=use_all_points)
 
-		# Create the figure to plot
+	# Create the figure to plot
+	if use_all_points:
+		fig = free_decay_plot_all(t,y,y_filt,offset,
+								  peaks_time,peaks_amp,
+								  xi_est,f_est,
+								  f,Pxx, Pxx_filt,
+								  fs,sos,f_max,filt_app,
+								  time_filter)
+	else:
 		fig = free_decay_plot(t,y,y_filt,offset,
 							  peaks_time,peaks_amp,
 							  xi_est,f_est,
@@ -250,12 +266,12 @@ try:
 							  fit_types[fit_type],
 							  window_size=window_size)
 
-		st.pyplot(fig) 
-	else:
-		st.write('No data available for the analysis. Please use the simulation menu to generate a time series or use an input file.')
-except:
-	st.error('Something went wrong. Check the simulation conditions or click below to try to run the simulation again.')
-	st.button('Run simulation again.')
+	st.pyplot(fig) 
+else:
+	st.write('No data available for the analysis. Please use the simulation menu to generate a time series or use an input file.')
+#except:
+#	st.error('Something went wrong. Check the simulation conditions or click below to try to run the simulation again.')
+#	st.button('Run simulation again.')
 
 with st.expander("See explanation",False):
 	st.write(r'''
