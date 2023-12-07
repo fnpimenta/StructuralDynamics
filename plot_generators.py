@@ -254,8 +254,6 @@ def free_decay_plot_all(t,y,y_filt,offset,
 	ax4 = plt.subplot(gs_f[:,:]) 	# Power spectrum
 	ax4_f = ax4.twinx()             # Power spectrum for filter response plot
 
-
-
 	# Original time series
 	ax1.plot(t,y,'blue',linewidth=1) # Time series plot
 	ax4.semilogy(f,Pxx,'b',label='Original signal',linewidth=1) # Power spectra plots
@@ -313,8 +311,6 @@ def free_decay_plot_all(t,y,y_filt,offset,
 		ax4_f.set_yticks([])
 
 	ax4.set_ylim(pmin,pmax)
-	ax4.set_title(f_title + '\t' + xi_title)
-
-
+	ax1.set_title(f_title + '\t' + xi_title)
 
 	return fig
