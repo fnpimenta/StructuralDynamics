@@ -180,9 +180,6 @@ if error_check == 0:
 				}
 
 	filt_app = tab2.checkbox('Apply filter') 
-	peaks_type = tab2.radio('Peaks to use', peaks_types.keys(),horizontal=True)
-
-	
 
 	if filt_app == 1:
 		filt_type = tab2.selectbox('Filter type', ['Low-pass','High-pass','Band-pass'],index=0)
@@ -214,6 +211,8 @@ if error_check == 0:
 	else:
 		y_filt = y
 		sos = 0
+
+	peaks_type = tab2.radio('Peaks to use', peaks_types.keys(),horizontal=True)
 
 	# Define the time series limits for analysis
 	time_filter = (t>=t_min) & (t<=t_max)
