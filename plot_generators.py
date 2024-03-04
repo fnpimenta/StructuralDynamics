@@ -288,7 +288,7 @@ def free_decay_plot_all(t,y,y_filt,offset,
 	m,dm,b,db = LinearFitCoefficients(peaks_time,np.log(abs(peaks_amp)))
 	ax2.plot(xbounds,xbounds*m+b,'--r')
 	ax1.plot(xbounds,offset + np.exp(b)*np.exp(m*xbounds),'--r')
-	ax2.fill_between(xbounds,
+	ax1.fill_between(xbounds,
 					 offset + np.exp(b-db)*np.exp((m-dm)*xbounds),
 					 offset + np.exp(b+db)*np.exp((m+dm)*xbounds),
 					 color='r',alpha=0.1) 
