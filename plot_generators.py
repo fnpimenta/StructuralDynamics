@@ -278,7 +278,7 @@ def free_decay_plot_all(t,y,y_filt,offset,
 	
 	# Plot estimated dynamic properties
 
-	xmin,xmax = 0,ax2.get_xlim()[1]
+	xmin,xmax = 0,ax1.get_xlim()[1]
 	xbounds = np.linspace(xmin,xmax)
 
 	ax4_f.axvline(f_est.mean(),0,1,c='g',ls='--') 
