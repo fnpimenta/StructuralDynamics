@@ -143,15 +143,18 @@ else:
 			fi=100/dt
 
 		else:
-			header_row = tab1.number_input('Header row', value=1) - 1
-			first_row = tab1.number_input('First data row', value=2) - 1
+			header_row = tab1.number_input('Header row', value=1,disabled=True) - 1
+			first_row = tab1.number_input('First data row', value=9,disabled=True) - 1
 		
 			skip_rows = [int(x) for x in range(first_row) if (x!=header_row)]
+			skip_rows = [0,1,2,3,4,5,7]
+			
 			if header_row<0:
-				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace',header=None)
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter="\s+",encoding_errors='replace',header=None)
 			else:
-				data = pd.read_csv(uploaded_file,skiprows=skip_rows,encoding_errors='replace')	
-			fi=10
+				data = pd.read_csv(uploaded_file,skiprows=skip_rows,delimiter="\s+",encoding_errors='replace')	
+			dof = tab1.selectbox('Data column', data.columns,index=min(np.shape(data)[1],1))
+			fi = np.round(1/(data['Time'].iloc[1] - data['Time'].iloc[0]),2)
 
 		y = np.array(data[dof])
 		fs = tab1.number_input('Sampling rate', value=fi)
